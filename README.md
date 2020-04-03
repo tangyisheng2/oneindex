@@ -44,6 +44,50 @@ Update：通过反代下载文件
 'downloadUrl'=>str_ireplace("截取的链接","反代的链接",$item['@microsoft.graph.downloadUrl']),
 ```
 
+Nginx反代设置
+
+```nginx
+server
+{
+    listen 80;
+    listen 443 ssl http2;
+    server_name yours.domainname.com;#把这里改成你的站点域名（不能和FODI前端一样！）
+    
+    ssl_certificate    /usr/share/nginx/ssl/pem.crt;#修改成自己的ssl证书(PEM格式)的存放位置
+    ssl_certificate_key    /usr/share/nginx/ssl/ssl.key;#修改成自己的ssl密钥(KEY)的存放位置
+    ssl_protocols TLSv1 TLSv1.1 TLSv1.2 TLSv1.3;
+    ssl_ciphers ECDHE-RSA-AES128-GCM-SHA256:HIGH:!aNULL:!MD5:!RC4:!DHE;
+    ssl_prefer_server_ciphers on;
+    ssl_session_cache shared:SSL:10m;
+    ssl_session_timeout 10m;
+    
+location  ~* \.(php|jsp|cgi|asp|aspx)$
+    {
+        proxy_pass https://yours.sharepoint.com;#把这里改成使用宝塔面板步骤3、步骤4的截选出的链接
+        proxy_set_header Host yours.sharepoint.com;#把这里改成上面链接去掉https://
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header REMOTE-HOST $remote_addr;
+        proxy_set_header Range $http_range;#此项感谢评论区超音速的提醒
+    }
+    location /
+    {
+        proxy_pass https://yours.sharepoint.com;#把这里改成使用宝塔面板步骤3、步骤4的截选出的链接
+        proxy_set_header Host yours.sharepoint.com;#把这里改成上面链接去掉https://
+        proxy_set_header X-Real-IP $remote_addr;
+        proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
+        proxy_set_header REMOTE-HOST $remote_addr;
+        proxy_set_header Range $http_range;#此项感谢评论区超音速的提醒
+        
+        add_header X-Cache $upstream_cache_status;
+        add_header Cache-Control no-cache;
+        expires 12h;
+    }
+}
+```
+
+
+
 Credit：https://www.nbmao.com/archives/3917
 
 ## Demo
