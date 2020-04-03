@@ -6,6 +6,46 @@ Onedrive Directory Index
 
 直接列出 OneDrive 目录，文件直链下载。  
 
+Update：通过反代下载文件
+
+```php
+		//通过分页获取页面所有item
+		static function dir_next_page($request, &$items, $retry=0){
+			$resp = fetch::get($request);
+			
+			$data = json_decode($resp->content, true);
+			if(empty($data) && $retry < 3){
+				$retry += 1;
+				return self::dir_next_page($request, $items, $retry);
+			}
+			
+			foreach((array)$data['value'] as $item){
+				//var_dump($item);
+				$items[$item['name']] = array(
+					'name'=>$item['name'],
+					'size'=>$item['size'],
+					'lastModifiedDateTime'=>strtotime($item['lastModifiedDateTime']),
+					'downloadUrl'=>$item['@microsoft.graph.downloadUrl'],
+					'folder'=>empty($item['folder'])?false:true
+				);
+			}
+
+			if(!empty($data['@odata.nextLink'])){
+				$request = self::request();
+				$request['url'] = $data['@odata.nextLink'];
+				return self::dir_next_page($request, $items);
+			}
+		}
+```
+
+将第16行替换为
+
+```php
+'downloadUrl'=>str_ireplace("截取的链接","反代的链接",$item['@microsoft.graph.downloadUrl']),
+```
+
+Credit：https://www.nbmao.com/archives/3917
+
 ## Demo
 [https://xn.tn](https://xn.tn)  
 
